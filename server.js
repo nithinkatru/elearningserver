@@ -1,3 +1,5 @@
+// server.js
+
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -16,6 +18,17 @@ mongoose.connect('mongodb+srv://nithinkumarkatru:hello@cluster0.zrplywq.mongodb.
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
+
+// Define Course model if not already defined
+if (!mongoose.models.Course) {
+  const CourseSchema = new mongoose.Schema({
+    title: String,
+    description: String,
+    url: String,
+  });
+
+  mongoose.model('Course', CourseSchema);
+}
 
 // User schema
 const UserSchema = new mongoose.Schema({
@@ -56,8 +69,10 @@ app.post('/api/users', async (req, res) => {
 
 app.use(cors());
 app.use(express.json());
-app.use('/api', coursesRoutes);
+app.use('/api/courses', coursesRoutes);
 
+// Endpoint to handle login
+// Endpoint to handle login
 app.post('/api/login', async (req, res) => {
   const { email } = req.body;
   console.log('Attempting login for email:', email); // Log the email attempting to log in
@@ -70,8 +85,9 @@ app.post('/api/login', async (req, res) => {
     }
 
     // Assuming password check logic is here...
+
     console.log('Login successful for:', email); // Log successful login
-    res.send('Login successful');
+    res.send({ message: 'Login successful', role: user.role }); // Send back the role of the user
   } catch (error) {
     console.error('Login error:', error); // Log any errors during login
     res.status(500).send('Server error');
