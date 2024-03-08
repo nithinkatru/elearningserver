@@ -2,12 +2,11 @@ const express = require('express');
 const multer = require('multer');
 const Video = require('../Models/Video'); 
 
-
 const router = express.Router();
 
 router.post('/videos', async (req, res) => {
-  const { title, url, description } = req.body;
-  const newVideo = new Video({ title, url, description });
+  const { title, url, description, courseId } = req.body; // Extract courseId from request body
+  const newVideo = new Video({ title, url, description, courseId }); // Include courseId in the new video object
   
   try {
     const savedVideo = await newVideo.save();
