@@ -1,12 +1,17 @@
 {
-  "name": "server",
+  "name": "nextskillserver",
   "version": "1.0.0",
+  "description": "This is the Backend Repo of My NextSkill Project.",
   "main": "server.js",
   "scripts": {
-    "start": "server.js"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server",
+    "dev": "nodemon server"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "NextSkill"
+  ],
+  "author": "Akshay Saharajan",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -16,8 +21,9 @@
     "md5": "^2.3.0",
     "mongoose": "^8.1.1",
     "multer": "^1.4.5-lts.1",
-    "nodemon": "^3.0.3",
     "react": "^18.2.0"
   },
-  "description": ""
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
 }
