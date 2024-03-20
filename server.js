@@ -25,6 +25,7 @@ if (!mongoose.models.Course) {
     title: String,
     description: String,
     url: String,
+    featured: Boolean,
   });
 
   mongoose.model('Course', CourseSchema);
@@ -45,6 +46,8 @@ const User = mongoose.model('User', UserSchema);
 app.use(cors());
 app.use(express.json());
 app.use('/api', videosRoutes);
+app.use('/uploads', express.static('uploads'));
+
 
 // Endpoint to create a new user with hashed password
 app.post('/api/users', async (req, res) => {

@@ -5,10 +5,10 @@ const videoSchema = new mongoose.Schema({
   title: String,
   url: String,
   description: String,
-  // You can add more fields as needed
+  courseId: mongoose.Schema.Types.ObjectId, // Reference to Course
+  videoFile: String, // Path to the video file
 });
 
-// Create the model from the schema
-const Video = mongoose.model('Video', videoSchema); // Correct usage
+const Video = mongoose.model('Video', videoSchema);
 
 module.exports = Video;

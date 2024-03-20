@@ -38,6 +38,17 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.get('/featured', async (req, res) => {
+  console.log('Retrieving featured courses...');
+  try {
+    const featuredCourses = await Course.find({ featured: true });
+    res.json(featuredCourses);
+  } catch (error) {
+    console.error('Error retrieving featured courses:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // GET: Retrieve a single course by ID
 router.get('/:id', async (req, res) => {
   console.log('Retrieving a single course...');
