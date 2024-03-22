@@ -7,6 +7,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const coursesRoutes = require('./routes/coursesRoutes');
 const videosRoutes = require('./routes/videosRoutes');
+const { MongoClient } = require('mongodb');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -75,7 +76,7 @@ app.use(express.json());
 app.use('/api/courses', coursesRoutes);
 
 // Endpoint to handle login
-// Endpoint to handle login
+
 app.post('/api/login', async (req, res) => {
   const { email } = req.body;
   console.log('Attempting login for email:', email); // Log the email attempting to log in
@@ -94,6 +95,42 @@ app.post('/api/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error); // Log any errors during login
     res.status(500).send('Server error');
+  }
+});
+
+// server.js
+
+// Endpoint to retrieve enrollment analytics
+app.get('/enrollment-analytics', async (req, res) => {
+  try {
+    // Aggregate to count the number of students
+    const studentCount = await User.aggregate([
+      { $match: { role: 'student' } }, // Filter documents by role: student
+      {
+        $group: {
+          _id: '$role',
+          count: { $sum: 1 } // Count the number of documents that match
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          role: '$_id',
+          students: '$count'
+        }
+      }
+    ]);
+
+    // Format the data to match your frontend expectations
+    const formattedData = studentCount.map(item => ({
+      name: item.role.charAt(0).toUpperCase() + item.role.slice(1), // Capitalize the role name
+      students: item.students
+    }));
+
+    res.json(formattedData);
+  } catch (error) {
+    console.error("Failed to retrieve enrollment analytics:", error);
+    res.status(500).send('Error retrieving enrollment analytics');
   }
 });
 
