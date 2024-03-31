@@ -32,6 +32,16 @@ if (!mongoose.models.Course) {
   mongoose.model('Course', CourseSchema);
 }
 
+const requireSuperAdmin = async (req, res, next) => {
+  // This assumes you have decoded the JWT token and set the user in req.user
+  if (req.user && req.user.role === 'superAdmin') {
+    next();
+  } else {
+    res.status(403).send('Access denied. Requires super admin role.');
+  }
+};
+
+
 // User schema
 const UserSchema = new mongoose.Schema({
   firstName: String,
@@ -43,13 +53,51 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', UserSchema);
+// Quiz schema
+const OptionSchema = new mongoose.Schema({
+  optionText: String,
+  isCorrect: Boolean,
+});
 
+const QuestionSchema = new mongoose.Schema({
+  questionText: String,
+  options: [OptionSchema],
+});
+
+const QuizSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  questions: [QuestionSchema],
+});
+
+const Quiz = mongoose.model('Quiz', QuizSchema);
 app.use(cors());
 app.use(express.json());
 app.use('/api', videosRoutes);
 app.use('/uploads', express.static('uploads'));
 
+// Endpoint to handle quiz submissions
+app.post('/api/submit-quiz', async (req, res) => {
+  const { quizId, answers } = req.body;
+  try {
+      // Save the submission to the database
+      const submission = new QuizSubmission({ quizId, answers });
+      await submission.save();
 
+      res.status(201).json({ message: 'Submission received' });
+  } catch (error) {
+      console.error('Error saving submission:', error);
+      res.status(500).send('Error saving submission');
+  }
+});
+
+// QuizSubmission schema (create this in your models)
+const QuizSubmissionSchema = new mongoose.Schema({
+  quizId: mongoose.Schema.Types.ObjectId,
+  answers: Object, // or a more detailed schema if needed
+});
+
+const QuizSubmission = mongoose.model('QuizSubmission', QuizSubmissionSchema);
 // Endpoint to create a new user with hashed password
 app.post('/api/users', async (req, res) => {
   const { firstName, lastName, email, phoneNumber, role, password } = req.body;
@@ -99,6 +147,70 @@ app.post('/api/login', async (req, res) => {
 });
 
 // server.js
+// Ensure Quiz is defined here if it's in another file
+// const Quiz = require('./models/Quiz');
+
+// Quiz Routes
+app.post('/api/quizzes', async (req, res) => {
+  const { title, description, questions } = req.body;
+  try {
+    const newQuiz = new Quiz({ title, description, questions });
+    const savedQuiz = await newQuiz.save();
+    res.status(201).json(savedQuiz);
+  } catch (error) {
+    console.error('Error saving quiz:', error);
+    res.status(500).send('Error saving quiz');
+  }
+});
+
+app.get('/api/quizzes', async (req, res) => {
+  try {
+    const quizzes = await Quiz.find();
+    res.json(quizzes);
+  } catch (error) {
+    console.error('Error fetching quizzes:', error);
+    res.status(500).send('Error fetching quizzes');
+  }
+});
+
+app.get('/api/quizzes/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+    if (!quiz) {
+      return res.status(404).send('Quiz not found');
+    }
+    res.json(quiz);
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    res.status(500).send('Error fetching quiz');
+  }
+});
+
+app.put('/api/quizzes/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!quiz) {
+      return res.status(404).send('Quiz not found');
+    }
+    res.json(quiz);
+  } catch (error) {
+    console.error('Error updating quiz:', error);
+    res.status(500).send('Error updating quiz');
+  }
+});
+
+app.delete('/api/quizzes/:id', async (req, res) => {
+  try {
+    const quiz = await Quiz.findByIdAndDelete(req.params.id);
+    if (!quiz) {
+      return res.status(404).send('Quiz not found');
+    }
+    res.send('Quiz deleted successfully');
+  } catch (error) {
+    console.error('Error deleting quiz:', error);
+    res.status(500).send('Error deleting quiz');
+  }
+});
 
 // Endpoint to retrieve enrollment analytics
 app.get('/enrollment-analytics', async (req, res) => {

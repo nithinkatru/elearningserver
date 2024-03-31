@@ -5,13 +5,11 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server",
-    "dev": "nodemon server"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "keywords": [
-    "NextSkill"
-  ],
-  "author": "Akshay Saharajan",
+  "keywords": ["NextSkill"],
+  "author": "Nithi Kumar Katru",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,8 +18,7 @@
     "express": "^4.18.2",
     "md5": "^2.3.0",
     "mongoose": "^8.1.1",
-    "multer": "^1.4.5-lts.1",
-    "react": "^18.2.0"
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
