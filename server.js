@@ -12,6 +12,7 @@
   const User = require('./Models/User');
   const login = require('./routes/login')
   const QuizSubmission = require('./Models/QuizSubmission'); // Adjust the path as needed
+  const gamificationRoutes = require('./routes/gamificationRoutes');
 
 
   // Connect to MongoDB
@@ -215,6 +216,7 @@ app.post('/api/login', async (req, res) => {
   app.use(express.json());
   app.use('/api', videosRoutes);
   app.use('/uploads', express.static('uploads'));
+  app.use('/api/gamification', gamificationRoutes);
 
   app.post('/api/submit-quiz', async (req, res) => {
     const { quizId, answers } = req.body;
