@@ -467,3 +467,31 @@ app.post('/api/users', async (req, res) => {
         .catch(err => res.status(400).json({ error: err }));
 });
 
+
+app.get('/enrollment-analytics', async (req, res) => {
+  try {
+    const studentCount = await User.countDocuments({ role: 'student' });
+    const courseCount = await Course.countDocuments({});
+    const quizCount = await Quiz.countDocuments({});
+    const averageGrade = await QuizSubmission.aggregate([
+      {
+        $group: {
+          _id: null,
+          average: { $avg: "$percentage" }
+        }
+      }
+    ]);
+
+    const data = {
+      students: studentCount,
+      courses: courseCount,
+      quizzes: quizCount,
+      averageGrade: averageGrade.length > 0 ? averageGrade[0].average : 0
+    };
+
+    res.json([data]); // Wrap in an array if your front end expects an array
+  } catch (error) {
+    console.error("Failed to retrieve enrollment analytics:", error);
+    res.status(500).send('Error retrieving enrollment analytics');
+  }
+});
