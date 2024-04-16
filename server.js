@@ -46,6 +46,17 @@
   app.use('/api', videosRoutes);
   app.use('/uploads', express.static('uploads'));
 
+  app.get("/*",function(req,res){
+    res.sendfile(
+      path.join(__dirname,"../client/build/index.html"),
+      function(err){
+        if (err){
+          res.status(500).send(err);
+        }
+      }
+    );
+  });
+
   // Endpoint to fetch user details by email
 app.get('/api/users/:email', async (req, res) => {
   const { email } = req.params;
