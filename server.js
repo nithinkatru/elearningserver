@@ -8,11 +8,14 @@
   const speakeasy = require('speakeasy');
   const app = express();
   const PORT = process.env.PORT || 5000;
-
+  
   const User = require('./Models/User');
   const login = require('./routes/login')
   const QuizSubmission = require('./Models/QuizSubmission'); // Adjust the path as needed
   const gamificationRoutes = require('./routes/gamificationRoutes');
+  const Grade = require('./Models/gradeSchema'); // Ensure this is the correct path to your Grade model
+  const Feedback = require('./Models/Feedback'); 
+
 
 
   // Connect to MongoDB
@@ -220,35 +223,112 @@ app.post('/api/login', async (req, res) => {
 
   app.post('/api/submit-quiz', async (req, res) => {
     const { quizId, answers } = req.body;
+
     try {
-      // Retrieve the quiz from the database
-      const quiz = await Quiz.findById(quizId);
-      if (!quiz) {
-        return res.status(404).json({ error: 'Quiz not found' });
-      }
-  
-      // Calculate the grade based on the submitted answers
-      let score = 0;
-      quiz.questions.forEach((question, index) => {
-        const submittedAnswer = answers[index];
-        const correctAnswer = question.options.find(option => option.isCorrect);
-        if (submittedAnswer === correctAnswer.optionText) {
-          score += 1; // Increment score if submitted answer matches correct answer
+        const quiz = await Quiz.findById(quizId).exec();
+        if (!quiz) {
+            return res.status(404).json({ error: 'Quiz not found' });
         }
-      });
-  
-      // Save the submission and grade to the database
-      const submission = new QuizSubmission({ quizId, answers, score });
-      await submission.save();
-  
-      res.status(201).json({ message: 'Submission received', score });
+
+        let score = 0;
+        const totalQuestions = quiz.questions.length;
+
+        quiz.questions.forEach((question) => {
+            const submittedAnswer = answers.find(a => a.questionId.toString() === question._id.toString());
+            const correctOption = question.options.find(option => option.isCorrect);
+            if (submittedAnswer && submittedAnswer.answer === correctOption.optionText) {
+                score++;
+            }
+        });
+
+        const percentage = (score / totalQuestions) * 100;
+
+        const submission = new QuizSubmission({
+            quizId,
+            answers,
+            score,
+            totalQuestions,
+            percentage
+        });
+
+        await submission.save();
+
+        res.status(201).json({ message: 'Submission received', score, percentage });
     } catch (error) {
-      console.error('Error saving submission:', error);
-      res.status(500).send('Error saving submission');
+        console.error('Error saving submission:', error);
+        res.status(500).send('Error saving submission');
     }
-  });
+});
+
+
+
+
+app.get('/api/submissions', async (req, res) => {
+  try {
+      const submissions = await QuizSubmission.find()
+          .populate('quizId', 'title')  // Optional: include quiz title for display
+          .populate('studentId', 'name');  // Optional: include student name for display
+      res.json(submissions);
+  } catch (error) {
+      console.error('Error fetching submissions:', error);
+      res.status(500).send('Error fetching submissions: ' + error.message);
+  }
+});
+
+
+// Endpoint for educators to grade submissions
+app.put('/api/submissions/:id/grade', async (req, res) => {
+  const { grade } = req.body;
+  try {
+      const submission = await QuizSubmission.findByIdAndUpdate(req.params.id, { grade, graded: true }, { new: true });
+      if (!submission) return res.status(404).send('Submission not found');
+      res.json(submission);
+  } catch (error) {
+      console.error('Error grading submission:', error);
+      res.status(500).send('Error grading submission');
+  }
+});
+
+// Endpoint for students to view their graded submissions
+app.get('/api/my-submissions/:studentId', async (req, res) => {
+  try {
+      const submissions = await QuizSubmission.find({ studentId: req.params.studentId, graded: true });
+      res.json(submissions);
+  } catch (error) {
+      console.error('Error fetching submissions:', error);
+      res.status(500).send('Error fetching graded submissions');
+  }
+});
   
-  
+app.put('/api/submissions/:id/grade', async (req, res) => {
+  const { grade } = req.body;
+  try {
+      const submission = await QuizSubmission.findByIdAndUpdate(
+          req.params.id,
+          { grade, graded: true },
+          { new: true }
+      ).populate('studentId', 'firstName lastName').populate('quizId', 'title');
+      if (!submission) return res.status(404).send('Submission not found');
+      res.json(submission);
+  } catch (error) {
+      console.error('Error grading submission:', error);
+      res.status(500).send('Error grading submission');
+  }
+});
+
+app.get('/api/submissions-grades', async (req, res) => {
+  try {
+      const submissions = await QuizSubmission.find()
+          .populate('quizId', 'title')  // Make sure 'quizId' and 'title' are correct
+          .populate('studentId', 'name');  // Make sure 'studentId' and 'name' are correct
+      res.json(submissions);
+  } catch (error) {
+      console.error('Error fetching submissions:', error);
+      res.status(500).send('Error fetching submissions');
+  }
+});
+
+
  // Endpoint to create a new user with plain text password
 app.post('/api/users', async (req, res) => {
   const { firstName, lastName, email, phoneNumber, role, password } = req.body;
@@ -315,7 +395,7 @@ app.post('/api/users', async (req, res) => {
 
   const Notice = mongoose.model('Notice', NoticeSchema);
 
-  // server.js or in your routes file
+  
 
   app.delete('/api/notices/:id', async (req, res) => {
     try {
@@ -362,7 +442,7 @@ app.post('/api/users', async (req, res) => {
     }
   });
 
-  // Update a user
+
   app.put('/api/users/:id', async (req, res) => {
     try {
       const { id } = req.params;
@@ -376,3 +456,14 @@ app.post('/api/users', async (req, res) => {
       res.status(500).send('Server Error');
     }
   });
+
+
+  
+  
+  app.post('/api/feedback', (req, res) => {
+    const newFeedback = new Feedback(req.body);
+    newFeedback.save()
+        .then(() => res.status(201).json({ message: 'Feedback received' }))
+        .catch(err => res.status(400).json({ error: err }));
+});
+
